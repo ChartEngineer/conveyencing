@@ -1,0 +1,260 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  ADMINISTRATOR
+  PARTNER
+  LEGAL_PRACTITIONER
+  CONVEYANCING_SECRETARY
+  ACCOUNTS_OFFICER
+  CLERK
+  ESTATE_AGENT
+  BANK_REPRESENTATIVE
+  CLIENT
+}
+
+enum ClientRole {
+  BUYER
+  SELLER
+  BOTH
+  BANK
+}
+
+enum KycStatus {
+  VERIFIED
+  PENDING
+  NOT_STARTED
+}
+
+enum MatterType {
+  SALE
+  PURCHASE
+  BOND_REGISTRATION
+}
+
+enum MatterStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum InvoiceStatus {
+  OUTSTANDING
+  PAID
+  OVERDUE
+}
+
+enum TrustTransactionType {
+  DEPOSIT
+  PAYMENT_OUT
+}
+
+// Staff / portal login accounts. A CLIENT-role User can be linked to a Client record for portal access.
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         StaffRole
+  createdAt    DateTime  @default(now())
+
+  responsibleMatters Matter[]        @relation("ResponsibleUser")
+  matterNotes        MatterNote[]
+  auditLogEntries    AuditLogEntry[]
+  clientProfile      Client?         @relation("ClientPortalUser")
+  uploadedFiles      MatterFile[]
+  messages           Message[]
+}
+
+model Client {
+  id        String     @id @default(cuid())
+  name      String
+  role      ClientRole
+  idNumber  String?
+  phone     String?
+  email     String?
+  address   String?
+  kyc       KycStatus  @default(NOT_STARTED)
+  conflict  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  portalUser   User?   @relation("ClientPortalUser", fields: [portalUserId], references: [id])
+  portalUserId String? @unique
+
+  matters  MatterClient[]
+  invoices Invoice[]
+}
+
+model Property {
+  id             String   @id @default(cuid())
+  standNo        String
+  suburb         String
+  city           String
+  titleDeedNo    String
+  surveyDiagram  String
+  size           String
+  valuationCents Int
+  gps            String
+  createdAt      DateTime @default(now())
+
+  owners  PropertyOwner[]
+  matters Matter[]
+}
+
+model PropertyOwner {
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  ownerName  String
+  fromYear   Int
+  toYear     Int?
+}
+
+model Matter {
+  id            String       @id @default(cuid())
+  reference     String       @unique
+  type          MatterType
+  property      Property     @relation(fields: [propertyId], references: [id])
+  propertyId    String
+  priceCents    Int
+  stageIndex    Int          @default(0)
+  status        MatterStatus @default(ACTIVE)
+  openedDate    DateTime
+  responsible   User         @relation("ResponsibleUser", fields: [responsibleId], references: [id])
+  responsibleId String
+  priority      Priority     @default(MEDIUM)
+  agent         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  clients           MatterClient[]
+  documentChecks    MatterDocumentCheck[]
+  notes             MatterNote[]
+  tasks             Task[]
+  invoices          Invoice[]
+  trustTransactions TrustTransaction[]
+  files             MatterFile[]
+  messages          Message[]
+}
+
+// Join table: a matter has multiple parties (buyer/seller/bank), a client can be party to multiple matters
+model MatterClient {
+  matter   Matter @relation(fields: [matterId], references: [id])
+  matterId String
+  client   Client @relation(fields: [clientId], references: [id])
+  clientId String
+
+  @@id([matterId, clientId])
+}
+
+// Required-document checklist item for a given stage of a matter (not an uploaded file, just a checkbox)
+model MatterDocumentCheck {
+  id       String  @id @default(cuid())
+  matter   Matter  @relation(fields: [matterId], references: [id])
+  matterId String
+  stage    String
+  name     String
+  done     Boolean @default(false)
+
+  files MatterFile[]
+}
+
+model MatterFile {
+  id              String               @id @default(cuid())
+  matter          Matter               @relation(fields: [matterId], references: [id])
+  matterId        String
+  documentCheck   MatterDocumentCheck? @relation(fields: [documentCheckId], references: [id])
+  documentCheckId String?
+  fileName        String
+  mimeType        String
+  sizeBytes       Int
+  data            Bytes
+  uploadedBy      User                 @relation(fields: [uploadedById], references: [id])
+  uploadedById    String
+  createdAt       DateTime             @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  matterId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model MatterNote {
+  id        String   @id @default(cuid())
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  matterId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  matter       Matter?    @relation(fields: [matterId], references: [id])
+  matterId     String?
+  assigneeName String
+  role         String
+  dueDate      DateTime
+  priority     Priority   @default(MEDIUM)
+  status       TaskStatus @default(OPEN)
+  createdAt    DateTime   @default(now())
+}
+
+model Invoice {
+  id                 String        @id @default(cuid())
+  matter             Matter        @relation(fields: [matterId], references: [id])
+  matterId           String
+  client             Client        @relation(fields: [clientId], references: [id])
+  clientId           String
+  description        String
+  feesCents          Int
+  disbursementsCents Int           @default(0)
+  status             InvoiceStatus @default(OUTSTANDING)
+  date               DateTime
+  dueDate            DateTime
+}
+
+model TrustTransaction {
+  id          String               @id @default(cuid())
+  matter      Matter               @relation(fields: [matterId], references: [id])
+  matterId    String
+  type        TrustTransactionType
+  amountCents Int
+  date        DateTime
+  description String
+}
+
+model AuditLogEntry {
+  id     String   @id @default(cuid())
+  ts     DateTime @default(now())
+  user   User     @relation(fields: [userId], references: [id])
+  userId String
+  action String
+}
