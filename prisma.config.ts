@@ -9,6 +9,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations need session-level Postgres features (advisory locks) that a transaction-mode
+    // pooler (e.g. Supabase's port 6543) breaks. DIRECT_URL should point at a session pooler or
+    // direct connection; the app's runtime PrismaClient (src/lib/db.ts) uses DATABASE_URL
+    // independently via its own adapter and never reads this file, so the two can safely differ.
+    url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
   },
 });
