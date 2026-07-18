@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import { DOC_TEMPLATES, generateDocument, type DocMatterData } from "@/lib/document-templates";
+import EmptyState from "@/components/empty-state";
 
 export default function DocumentGeneratorClient({ matters }: { matters: (DocMatterData & { id: string })[] }) {
   const [matterId, setMatterId] = useState(matters[0]?.id ?? "");
   const [doc, setDoc] = useState<{ title: string; body: string } | null>(null);
 
   const matter = matters.find((m) => m.id === matterId);
+
+  if (matters.length === 0) {
+    return (
+      <div className="card">
+        <EmptyState
+          title="No matters yet"
+          hint="Documents are generated from a matter's data — create a matter first."
+          actionHref="/matters/new"
+          actionLabel="+ New Matter"
+        />
+      </div>
+    );
+  }
 
   function open(templateId: string) {
     if (!matter) return;

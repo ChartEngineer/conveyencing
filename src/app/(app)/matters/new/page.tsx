@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createMatter } from "@/app/actions/matters";
 import { requireNavAccess } from "@/lib/dal";
+import EmptyState from "@/components/empty-state";
 
 export default async function NewMatterPage() {
   await requireNavAccess("matters");
@@ -11,6 +12,31 @@ export default async function NewMatterPage() {
     prisma.property.findMany({ orderBy: { standNo: "asc" } }),
     prisma.user.findMany({ where: { role: { not: "CLIENT" } }, orderBy: { name: "asc" } }),
   ]);
+
+  if (clients.length === 0 || properties.length === 0) {
+    return (
+      <div className="card" style={{ maxWidth: 640 }}>
+        <div className="flex-between mb16">
+          <h3 style={{ margin: 0 }}>New Matter</h3>
+          <Link href="/matters" className="small muted">
+            Cancel
+          </Link>
+        </div>
+        <EmptyState
+          title="You need at least one client and one property before opening a matter"
+          hint={
+            clients.length === 0 && properties.length === 0
+              ? "Register a client and a property first, then come back here."
+              : clients.length === 0
+                ? "Register a client first, then come back here."
+                : "Register a property first, then come back here."
+          }
+          actionHref={clients.length === 0 ? "/clients/new" : "/properties/new"}
+          actionLabel={clients.length === 0 ? "Register Client" : "Register Property"}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="card" style={{ maxWidth: 640 }}>

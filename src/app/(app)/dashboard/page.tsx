@@ -22,6 +22,8 @@ export default async function DashboardPage() {
     activeMatters,
     upcomingTasks,
     kycPending,
+    clientCount,
+    propertyCount,
   ] = await Promise.all([
     prisma.matter.count({ where: { status: "ACTIVE" } }),
     prisma.matter.count({ where: { status: "CLOSED" } }),
@@ -40,6 +42,8 @@ export default async function DashboardPage() {
     }),
     prisma.task.findMany({ where: { status: { not: "DONE" } }, orderBy: { dueDate: "asc" }, take: 6 }),
     prisma.client.count({ where: { kyc: { not: "VERIFIED" } } }),
+    prisma.client.count(),
+    prisma.property.count(),
   ]);
 
   const revenue = invoicesByStatus
@@ -63,6 +67,41 @@ export default async function DashboardPage() {
 
   return (
     <>
+      {clientCount === 0 && propertyCount === 0 && (
+        <div className="card mb16">
+          <h3>Get started</h3>
+          <div className="small muted mb16">A matter needs a client and a property. Three steps to your first one:</div>
+          <div className="grid grid-3">
+            <div>
+              <div className="small" style={{ fontWeight: 600 }}>
+                1. Register a client
+              </div>
+              <div className="small muted mb12">The buyer, seller, or bank on the transfer.</div>
+              <Link className="btn btn-primary btn-sm" href="/clients/new">
+                + Register Client
+              </Link>
+            </div>
+            <div>
+              <div className="small" style={{ fontWeight: 600 }}>
+                2. Register the property
+              </div>
+              <div className="small muted mb12">Stand number, title deed, survey diagram.</div>
+              <Link className="btn btn-primary btn-sm" href="/properties/new">
+                + Register Property
+              </Link>
+            </div>
+            <div>
+              <div className="small" style={{ fontWeight: 600 }}>
+                3. Open the matter
+              </div>
+              <div className="small muted mb12">Link the parties and property, assign a practitioner.</div>
+              <Link className="btn btn-primary btn-sm" href="/matters/new">
+                + New Matter
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="grid grid-4 mb16">
         <div className="card stat-card">
           <div className="label">Active Matters</div>

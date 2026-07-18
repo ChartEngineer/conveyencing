@@ -4,6 +4,7 @@ import { fmtDate } from "@/lib/constants";
 import { KycBadge } from "@/components/badges";
 import { requireNavAccess } from "@/lib/dal";
 import Pagination from "@/components/pagination";
+import EmptyState from "@/components/empty-state";
 
 const PAGE_SIZE = 20;
 
@@ -33,6 +34,17 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           + Register Client
         </Link>
       </div>
+      {total === 0 ? (
+        <div className="card">
+          <EmptyState
+            title={q ? `No clients match "${q}"` : "No clients yet"}
+            hint={q ? "Try a different search, or register a new client." : "Register your first client to be able to open a matter for them."}
+            actionHref="/clients/new"
+            actionLabel="+ Register Client"
+          />
+        </div>
+      ) : (
+        <>
       <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table>
@@ -71,6 +83,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
       <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/clients" extraParams={{ q }} />
+        </>
+      )}
     </>
   );
 }

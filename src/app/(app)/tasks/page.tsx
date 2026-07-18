@@ -5,6 +5,7 @@ import { PriorityBadge } from "@/components/badges";
 import { setTaskStatus } from "@/app/actions/tasks";
 import StatusSelect from "@/components/status-select";
 import { requireNavAccess } from "@/lib/dal";
+import EmptyState from "@/components/empty-state";
 
 const TASK_STATUS_LABELS = { OPEN: "Open", IN_PROGRESS: "In Progress", DONE: "Done" } as const;
 
@@ -36,6 +37,16 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           + New Task
         </Link>
       </div>
+      {tasks.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            title={filter === "All" ? "No tasks yet" : `No ${filter.toLowerCase()} tasks`}
+            hint={filter === "All" ? "Create a task to track follow-ups on a matter." : undefined}
+            actionHref="/tasks/new"
+            actionLabel="+ New Task"
+          />
+        </div>
+      ) : (
       <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table>
@@ -76,6 +87,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           </table>
         </div>
       </div>
+      )}
     </>
   );
 }

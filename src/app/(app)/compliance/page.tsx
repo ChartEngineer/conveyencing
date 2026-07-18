@@ -42,10 +42,12 @@ export default async function CompliancePage() {
                 ))}
               </tbody>
             </table>
+            {clients.length === 0 && <div className="empty small">No clients yet.</div>}
           </div>
         </div>
         <div className="card">
           <h3>Required Clearances — Active Matters</h3>
+          {activeMatters.length === 0 && <div className="empty small">No active matters.</div>}
           {activeMatters.map((m) => (
             <div className="mb12" key={m.id}>
               <div className="small" style={{ fontWeight: 600 }}>
@@ -68,6 +70,7 @@ export default async function CompliancePage() {
       </div>
       <div className="card">
         <h3>Audit Log</h3>
+        {auditLog.length === 0 && <div className="empty small">No audit entries yet.</div>}
         {auditLog.map((a) => (
           <div className="timeline-item" key={a.id}>
             <div className="timeline-dot" />

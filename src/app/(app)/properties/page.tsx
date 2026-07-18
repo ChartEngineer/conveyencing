@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { fmtMoney } from "@/lib/constants";
 import { requireNavAccess } from "@/lib/dal";
+import EmptyState from "@/components/empty-state";
 
 export default async function PropertiesPage() {
   await requireNavAccess("properties");
@@ -19,6 +20,16 @@ export default async function PropertiesPage() {
           + Register Property
         </Link>
       </div>
+      {properties.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            title="No properties yet"
+            hint="Register the property involved in your first matter — stand number, title deed, and survey diagram."
+            actionHref="/properties/new"
+            actionLabel="+ Register Property"
+          />
+        </div>
+      ) : (
       <div className="grid grid-3">
         {properties.map((p) => (
           <div className="card" key={p.id}>
@@ -52,6 +63,7 @@ export default async function PropertiesPage() {
           </div>
         ))}
       </div>
+      )}
     </>
   );
 }

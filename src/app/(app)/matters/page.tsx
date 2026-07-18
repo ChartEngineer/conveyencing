@@ -5,6 +5,7 @@ import { StageBadge, PriorityBadge } from "@/components/badges";
 import { requireNavAccess } from "@/lib/dal";
 import { canViewSensitiveData } from "@/lib/permissions";
 import Pagination from "@/components/pagination";
+import EmptyState from "@/components/empty-state";
 
 const PAGE_SIZE = 20;
 
@@ -16,7 +17,7 @@ export default async function MattersPage({ searchParams }: { searchParams: Prom
 
   const where = filter === "Active" ? { status: "ACTIVE" as const } : filter === "Closed" ? { status: "CLOSED" as const } : {};
 
-  const [matters, total] = await Promise.all([
+  const [matters, total, clientCount, propertyCount] = await Promise.all([
     prisma.matter.findMany({
       where,
       include: { property: true, clients: { include: { client: true } }, responsible: true },
@@ -25,6 +26,8 @@ export default async function MattersPage({ searchParams }: { searchParams: Prom
       take: PAGE_SIZE,
     }),
     prisma.matter.count({ where }),
+    prisma.client.count(),
+    prisma.property.count(),
   ]);
 
   const filters = ["All", "Active", "Closed"];
@@ -43,6 +46,26 @@ export default async function MattersPage({ searchParams }: { searchParams: Prom
           + New Matter
         </Link>
       </div>
+      {total === 0 ? (
+        <div className="card">
+          {clientCount === 0 || propertyCount === 0 ? (
+            <EmptyState
+              title="No matters yet"
+              hint="A matter needs at least one client and one property. Register those first, then create your first matter."
+              actionHref={clientCount === 0 ? "/clients/new" : "/properties/new"}
+              actionLabel={clientCount === 0 ? "Register Client" : "Register Property"}
+            />
+          ) : (
+            <EmptyState
+              title={filter === "All" ? "No matters yet" : `No ${filter.toLowerCase()} matters`}
+              hint={filter === "All" ? "Create your first matter to start tracking a transfer." : undefined}
+              actionHref="/matters/new"
+              actionLabel="+ New Matter"
+            />
+          )}
+        </div>
+      ) : (
+      <>
       <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table>
@@ -96,6 +119,8 @@ export default async function MattersPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
       <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath="/matters" extraParams={{ filter }} />
+      </>
+      )}
     </>
   );
 }
