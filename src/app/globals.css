@@ -313,6 +313,18 @@ button {
 .table-wrap {
   overflow-x: auto;
 }
+/* Pin the first column (reference/name) so it stays visible while scrolling
+   wide tables horizontally on narrow screens. */
+.table-wrap table th:first-child,
+.table-wrap table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--card);
+}
+.table-wrap table tr:hover td:first-child {
+  background: #fafbfd;
+}
 table {
   width: 100%;
   border-collapse: collapse;
