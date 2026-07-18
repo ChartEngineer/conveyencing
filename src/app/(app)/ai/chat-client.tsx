@@ -1,24 +1,34 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { answerQuestion, SUGGESTED_QUESTIONS, type AiMatterSummary } from "@/lib/ai-faq";
+import { useRef, useState, useTransition } from "react";
+import { askAiAssistant } from "@/app/actions/ai";
+import { SUGGESTED_QUESTIONS } from "@/lib/ai-faq";
 
 type ChatMessage = { role: "user" | "ai"; text: string };
 
-export default function AiChatClient({ matters }: { matters: AiMatterSummary[] }) {
+export default function AiChatClient() {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [isPending, startTransition] = useTransition();
   const logRef = useRef<HTMLDivElement>(null);
 
-  function ask(question?: string) {
-    const q = (question ?? input).trim();
-    if (!q) return;
-    const answer = answerQuestion(q, matters);
-    setHistory((h) => [...h, { role: "user", text: q }, { role: "ai", text: answer }]);
-    setInput("");
+  function scrollToEnd() {
     setTimeout(() => {
       if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
     }, 50);
+  }
+
+  function ask(question?: string) {
+    const q = (question ?? input).trim();
+    if (!q || isPending) return;
+    setHistory((h) => [...h, { role: "user", text: q }]);
+    setInput("");
+    scrollToEnd();
+    startTransition(async () => {
+      const answer = await askAiAssistant(q);
+      setHistory((h) => [...h, { role: "ai", text: answer }]);
+      scrollToEnd();
+    });
   }
 
   return (
@@ -34,6 +44,7 @@ export default function AiChatClient({ matters }: { matters: AiMatterSummary[] }
               {m.text}
             </div>
           ))}
+          {isPending && <div className="chatline ai small muted">Thinking…</div>}
         </div>
         <div className="flex gap8">
           <input
@@ -43,8 +54,9 @@ export default function AiChatClient({ matters }: { matters: AiMatterSummary[] }
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && ask()}
+            disabled={isPending}
           />
-          <button className="btn btn-primary" onClick={() => ask()}>
+          <button className="btn btn-primary" onClick={() => ask()} disabled={isPending}>
             Send
           </button>
         </div>
@@ -58,7 +70,7 @@ export default function AiChatClient({ matters }: { matters: AiMatterSummary[] }
         ))}
         <div className="mt16" style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
           <div className="small muted">
-            Other planned AI capabilities (not enabled in this demo): OCR of scanned deeds/IDs, document comparison,
+            Other planned AI capabilities (not enabled yet): OCR of scanned deeds/IDs, document comparison,
             missing-clause detection, clause suggestions, and predictive timelines based on historical matters.
           </div>
         </div>
