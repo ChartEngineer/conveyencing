@@ -5,7 +5,9 @@ import { prisma } from "@/lib/db";
 export default async function Home() {
   const session = await getSession();
   if (session?.userId) {
-    redirect(session.role === "CLIENT" ? "/portal" : "/dashboard");
+    if (session.role === "CLIENT") redirect("/portal");
+    if (session.role === "COLLABORATOR") redirect("/collab");
+    redirect("/dashboard");
   }
   const userCount = await prisma.user.count();
   if (userCount === 0) {

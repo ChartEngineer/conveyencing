@@ -18,6 +18,7 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   ai: { title: "AI Legal Assistant", subtitle: "Demo assistant — always reviewed by a legal practitioner" },
   portal: { title: "Client Portal", subtitle: "Track your property transfer in real time" },
   users: { title: "Staff Users", subtitle: "Manage staff accounts and access" },
+  collab: { title: "Shared Matters", subtitle: "Matters you've been given access to collaborate on" },
 };
 
 export default function Shell({

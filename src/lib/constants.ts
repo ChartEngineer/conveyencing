@@ -35,7 +35,8 @@ export type StaffRole =
   | "CLERK"
   | "ESTATE_AGENT"
   | "BANK_REPRESENTATIVE"
-  | "CLIENT";
+  | "CLIENT"
+  | "COLLABORATOR";
 
 export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
   ADMINISTRATOR: "Administrator",
@@ -47,6 +48,15 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
   ESTATE_AGENT: "Estate Agent",
   BANK_REPRESENTATIVE: "Bank Representative",
   CLIENT: "Client",
+  COLLABORATOR: "External Collaborator",
+};
+
+export type CollaboratorRole = "OPPOSING_COUNSEL" | "BANK" | "OTHER";
+
+export const COLLABORATOR_ROLE_LABELS: Record<CollaboratorRole, string> = {
+  OPPOSING_COUNSEL: "Opposing Counsel",
+  BANK: "Bank",
+  OTHER: "Other",
 };
 
 export type NavItem = {
@@ -127,6 +137,13 @@ export const NAV: NavItem[] = [
     label: "Client Portal",
     icon: "\u{1F310}",
     roles: ["CLIENT"],
+  },
+  {
+    id: "collab",
+    href: "/collab",
+    label: "Shared Matters",
+    icon: "\u{1F91D}",
+    roles: ["COLLABORATOR"],
   },
   {
     id: "users",

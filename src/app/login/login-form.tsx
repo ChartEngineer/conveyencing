@@ -24,10 +24,6 @@ export default function LoginForm() {
       <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} disabled={pending} type="submit">
         {pending ? "Signing in…" : "Sign In"}
       </button>
-      <div className="hint mt12">
-        Demo accounts (password <code>password123</code>): partner@deeds360.co.zw, secretary@deeds360.co.zw,
-        client@deeds360.co.zw
-      </div>
     </form>
   );
 }

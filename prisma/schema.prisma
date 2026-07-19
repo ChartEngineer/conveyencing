@@ -20,6 +20,21 @@ enum StaffRole {
   ESTATE_AGENT
   BANK_REPRESENTATIVE
   CLIENT
+  // External guest granted scoped access to one or more specific matters via invite
+  // (opposing counsel, a bank). Never has firm-wide visibility like the roles above.
+  COLLABORATOR
+}
+
+enum CollaboratorRole {
+  OPPOSING_COUNSEL
+  BANK
+  OTHER
+}
+
+enum CollaboratorStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
 }
 
 enum ClientRole {
@@ -84,6 +99,8 @@ model User {
   clientProfile      Client?         @relation("ClientPortalUser")
   uploadedFiles      MatterFile[]
   messages           Message[]
+  collaboratorLinks  MatterCollaborator[] @relation("CollaboratorPortalUser")
+  sentInvites        MatterCollaborator[] @relation("InvitedCollaborators")
 }
 
 model Client {
@@ -155,6 +172,7 @@ model Matter {
   trustTransactions TrustTransaction[]
   files             MatterFile[]
   messages          Message[]
+  collaborators     MatterCollaborator[]
 }
 
 // Join table: a matter has multiple parties (buyer/seller/bank), a client can be party to multiple matters
@@ -257,4 +275,29 @@ model AuditLogEntry {
   user   User     @relation(fields: [userId], references: [id])
   userId String
   action String
+}
+
+// An external party's scoped, invite-based access to a single Matter (opposing counsel, a
+// bank). Distinct from Client: a Client is a party to the transaction; a collaborator is a
+// third party the firm has chosen to grant read/comment access to, revocable at any time.
+// One real person (one email) can hold invites — and one linked User — across multiple
+// matters, so userId is intentionally not unique; (matterId, email) is the one-invite-per-
+// matter-per-person constraint.
+model MatterCollaborator {
+  id                   String              @id @default(cuid())
+  matter               Matter              @relation(fields: [matterId], references: [id])
+  matterId             String
+  name                 String
+  email                String
+  role                 CollaboratorRole
+  status               CollaboratorStatus  @default(PENDING)
+  inviteToken          String              @unique
+  inviteTokenExpiresAt DateTime
+  invitedBy            User                @relation("InvitedCollaborators", fields: [invitedById], references: [id])
+  invitedById          String
+  user                 User?               @relation("CollaboratorPortalUser", fields: [userId], references: [id])
+  userId               String?
+  createdAt            DateTime            @default(now())
+
+  @@unique([matterId, email])
 }

@@ -2,15 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { verifySession } from "@/lib/dal";
+import { assertMatterAccess } from "@/lib/dal";
 
 export async function sendMessage(matterId: string, formData: FormData) {
-  const session = await verifySession();
+  const user = await assertMatterAccess(matterId);
   const body = String(formData.get("body") || "").trim();
   if (!body) return;
 
-  await prisma.message.create({ data: { matterId, senderId: session.userId, body } });
+  await prisma.message.create({ data: { matterId, senderId: user.id, body } });
 
   revalidatePath(`/matters/${matterId}`);
   revalidatePath("/portal");
+  revalidatePath("/collab");
 }

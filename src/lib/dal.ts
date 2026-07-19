@@ -39,3 +39,26 @@ export async function requireNavAccess(navId: string) {
   }
   return user;
 }
+
+// Staff roles have firm-wide visibility by design (any matter, via the "matters" nav).
+// CLIENT and COLLABORATOR are scoped to specific matters, so any action that takes a matterId
+// from the client (e.g. sending a message) must check membership explicitly — nav access alone
+// only confirms they're allowed on *a* matter page, not *this* matter.
+export async function assertMatterAccess(matterId: string) {
+  const user = await getCurrentUser();
+
+  if (user.role === "CLIENT") {
+    const client = await prisma.client.findUnique({ where: { portalUserId: user.id } });
+    const linked = client && (await prisma.matterClient.findUnique({ where: { matterId_clientId: { matterId, clientId: client.id } } }));
+    if (!linked) redirect("/portal");
+    return user;
+  }
+
+  if (user.role === "COLLABORATOR") {
+    const link = await prisma.matterCollaborator.findFirst({ where: { matterId, userId: user.id, status: "ACCEPTED" } });
+    if (!link) redirect("/collab");
+    return user;
+  }
+
+  return user;
+}

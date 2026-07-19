@@ -8,7 +8,12 @@ function loadDatabaseUrl() {
   return content.match(/^DATABASE_URL="(.*)"$/m)[1];
 }
 
-const MIGRATIONS = ["20260717120000_init", "20260717130000_add_files_and_messages", "20260717140000_add_immutability_triggers"];
+const MIGRATIONS = [
+  "20260717120000_init",
+  "20260717130000_add_files_and_messages",
+  "20260717140000_add_immutability_triggers",
+  "20260718120000_add_matter_collaborators",
+];
 
 async function main() {
   const client = new Client({ connectionString: loadDatabaseUrl(), ssl: { rejectUnauthorized: false } });

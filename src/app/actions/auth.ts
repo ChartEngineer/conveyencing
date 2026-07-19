@@ -30,6 +30,9 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   if (user.role === "CLIENT") {
     redirect("/portal");
   }
+  if (user.role === "COLLABORATOR") {
+    redirect("/collab");
+  }
   redirect("/dashboard");
 }
 

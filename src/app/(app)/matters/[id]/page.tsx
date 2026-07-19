@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
-import { STAGES, STAGE_META, fmtMoney, fmtDate, addDays } from "@/lib/constants";
+import { STAGES, STAGE_META, fmtMoney, fmtDate, addDays, COLLABORATOR_ROLE_LABELS } from "@/lib/constants";
 import { PriorityBadge, KycBadge } from "@/components/badges";
 import { advanceStage, toggleDocCheck, addNote } from "@/app/actions/matters";
 import { uploadMatterFile } from "@/app/actions/files";
 import { sendMessage } from "@/app/actions/messages";
+import { inviteCollaborator, revokeCollaborator } from "@/app/actions/collaborators";
 import { requireNavAccess } from "@/lib/dal";
 import { canViewSensitiveData } from "@/lib/permissions";
 
@@ -15,10 +17,17 @@ function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default async function MatterDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MatterDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ invited?: string }>;
+}) {
   const user = await requireNavAccess("matters");
   const canViewSensitive = canViewSensitiveData(user.role);
   const { id } = await params;
+  const { invited } = await searchParams;
 
   const matter = await prisma.matter.findUnique({
     where: { id },
@@ -29,10 +38,21 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
       documentChecks: { include: { files: true } },
       notes: { include: { author: true }, orderBy: { createdAt: "desc" } },
       messages: { include: { sender: true }, orderBy: { createdAt: "asc" } },
+      collaborators: { orderBy: { createdAt: "desc" } },
     },
   });
 
   if (!matter) notFound();
+
+  let inviteLink: string | null = null;
+  if (invited && canViewSensitive) {
+    const justInvited = matter.collaborators.find((c) => c.id === invited);
+    if (justInvited) {
+      const host = (await headers()).get("host");
+      const protocol = host?.startsWith("localhost") ? "http" : "https";
+      inviteLink = host ? `${protocol}://${host}/invite/${justInvited.inviteToken}` : `/invite/${justInvited.inviteToken}`;
+    }
+  }
 
   const stageName = STAGES[matter.stageIndex];
   const meta = STAGE_META[stageName];
@@ -188,7 +208,7 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
         <div className="mb12" style={{ maxHeight: 260, overflowY: "auto" }}>
           {matter.messages.length === 0 && <div className="empty small">No messages yet.</div>}
           {matter.messages.map((m) => (
-            <div key={m.id} className={`chatline ${m.sender.role === "CLIENT" ? "ai" : "user"}`}>
+            <div key={m.id} className={`chatline ${m.sender.role === "CLIENT" || m.sender.role === "COLLABORATOR" ? "ai" : "user"}`}>
               <div>{m.body}</div>
               <div className="small" style={{ opacity: 0.7, marginTop: 4 }}>
                 {m.sender.name} • {fmtDate(m.createdAt)}
@@ -203,6 +223,79 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
           </button>
         </form>
       </div>
+
+      {canViewSensitive && (
+        <div className="card mt16">
+          <h3>Collaborators</h3>
+          <div className="small muted mb16">
+            Invite the other side&apos;s lawyer or the bank to see this matter&apos;s stage, parties, document checklist,
+            and exchange messages — nothing else (no price, no trust ledger, no other matters).
+          </div>
+
+          {inviteLink && (
+            <div className="mb16" style={{ background: "var(--amber-bg)", border: "1px solid #f1d9ab", borderRadius: 8, padding: 12 }}>
+              <div className="small" style={{ fontWeight: 600, marginBottom: 4 }}>
+                Invite created — share this link (it isn&apos;t emailed automatically):
+              </div>
+              <div className="small" style={{ wordBreak: "break-all" }}>
+                {inviteLink}
+              </div>
+            </div>
+          )}
+
+          {matter.collaborators.length === 0 && <div className="empty small">No collaborators invited yet.</div>}
+          {matter.collaborators.map((c) => {
+            const revokeWithIds = revokeCollaborator.bind(null, c.id, matter.id);
+            return (
+              <div key={c.id} className="flex-between mb12" style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px" }}>
+                <div>
+                  <b className="small">{c.name}</b>
+                  <div className="small muted">
+                    {c.email} • {COLLABORATOR_ROLE_LABELS[c.role]}
+                  </div>
+                </div>
+                <div className="flex gap8" style={{ alignItems: "center" }}>
+                  <span
+                    className={`badge ${c.status === "ACCEPTED" ? "badge-green" : c.status === "PENDING" ? "badge-amber" : "badge-gray"}`}
+                  >
+                    {c.status}
+                  </span>
+                  {c.status !== "REVOKED" && (
+                    <form action={revokeWithIds}>
+                      <button className="btn btn-ghost btn-sm" type="submit">
+                        Revoke
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          <h3 className="mt20">Invite a Collaborator</h3>
+          <form action={inviteCollaborator.bind(null, matter.id)} className="field-row">
+            <div className="field">
+              <label htmlFor="collab-name">Name</label>
+              <input id="collab-name" name="name" required />
+            </div>
+            <div className="field">
+              <label htmlFor="collab-email">Email</label>
+              <input id="collab-email" name="email" type="email" required />
+            </div>
+            <div className="field">
+              <label htmlFor="collab-role">Role</label>
+              <select id="collab-role" name="role" defaultValue="OPPOSING_COUNSEL">
+                <option value="OPPOSING_COUNSEL">Opposing Counsel</option>
+                <option value="BANK">Bank</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <button className="btn btn-primary" type="submit" style={{ alignSelf: "flex-end" }}>
+              Send Invite
+            </button>
+          </form>
+        </div>
+      )}
     </>
   );
 }
