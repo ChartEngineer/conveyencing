@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { DOC_TEMPLATES, generateDocument, type DocMatterData } from "@/lib/document-templates";
+import { recordDocGeneration } from "@/app/actions/documents";
 import EmptyState from "@/components/empty-state";
 
 export default function DocumentGeneratorClient({ matters }: { matters: (DocMatterData & { id: string })[] }) {
   const [matterId, setMatterId] = useState(matters[0]?.id ?? "");
   const [doc, setDoc] = useState<{ title: string; body: string } | null>(null);
+  const [paywall, setPaywall] = useState<{ limit: number } | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const matter = matters.find((m) => m.id === matterId);
 
@@ -23,9 +26,19 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
     );
   }
 
-  function open(templateId: string) {
-    if (!matter) return;
-    setDoc(generateDocument(templateId, matter));
+  async function open(templateId: string) {
+    if (!matter || generating) return;
+    setGenerating(true);
+    try {
+      const result = await recordDocGeneration();
+      if (!result.allowed) {
+        setPaywall({ limit: result.limit });
+        return;
+      }
+      setDoc(generateDocument(templateId, matter));
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function copyText() {
@@ -77,6 +90,30 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
           </div>
         ))}
       </div>
+
+      {paywall && (
+        <div className="overlay" onClick={(e) => e.target === e.currentTarget && setPaywall(null)}>
+          <div className="modal">
+            <div className="modal-head">
+              <h3>Document generation limit reached</h3>
+              <button className="x-close" onClick={() => setPaywall(null)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="small">
+                This plan includes {paywall.limit} generated documents per period, and the firm has used all of them.
+                Ask your administrator to upgrade the plan from Settings → Billing.
+              </p>
+            </div>
+            <div className="modal-foot">
+              <button className="btn btn-ghost" onClick={() => setPaywall(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {doc && (
         <div className="overlay" onClick={(e) => e.target === e.currentTarget && setDoc(null)}>

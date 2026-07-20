@@ -37,6 +37,12 @@ enum CollaboratorStatus {
   REVOKED
 }
 
+enum PlanTier {
+  SOLO
+  PRACTICE
+  FIRM
+}
+
 enum ClientRole {
   BUYER
   SELLER
@@ -305,4 +311,23 @@ model MatterCollaborator {
   createdAt            DateTime            @default(now())
 
   @@unique([matterId, email])
+}
+
+// Single-row (singleton) subscription record — this app is single-tenant per deployment (one
+// instance = one firm), so there is no per-customer billing table. Billing/payment state below
+// is a stub: `status` and the credit counters are read and written by the app, but nothing here
+// ever talks to a real payment provider. See COMPLIANCE-NOTES.md.
+model Subscription {
+  id              String   @id @default(cuid())
+  tier            PlanTier @default(SOLO)
+  seats           Int      @default(1)
+  trialEndsAt     DateTime?
+  // Stub billing status — no real payment provider is wired up (see settings page "Upgrade").
+  status          String   @default("trialing")
+  aiCreditsUsed   Int      @default(0)
+  aiCreditsLimit  Int      @default(20)
+  docCreditsUsed  Int      @default(0)
+  docCreditsLimit Int      @default(50)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

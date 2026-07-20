@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { NAV, navForRole } from "@/lib/constants";
+import { getSubscription } from "@/lib/entitlements";
+import { tierAtLeast } from "@/lib/plans";
 
 export const verifySession = cache(async () => {
   const session = await getSession();
@@ -29,11 +31,18 @@ export const getCurrentUser = cache(async () => {
 // stop someone from typing the URL directly, so every page that appears in NAV must call this
 // with its own nav id. Falls back to the user's own first available page rather than a hardcoded
 // route, so a denied CLIENT (whose only page is /portal) can't be bounced into a redirect loop.
+// Also enforces the nav item's minTier (if any) against the firm's current plan — the fallback
+// item is always plan-unrestricted (dashboard/portal/collab), so this can't redirect-loop.
 export async function requireNavAccess(navId: string) {
   const user = await getCurrentUser();
   const item = NAV.find((n) => n.id === navId);
-  const allowed = item?.roles.includes(user.role);
-  if (!allowed) {
+  const allowedByRole = !!item?.roles.includes(user.role);
+  let allowedByPlan = true;
+  if (item?.minTier) {
+    const subscription = await getSubscription();
+    allowedByPlan = tierAtLeast(subscription.tier, item.minTier);
+  }
+  if (!allowedByRole || !allowedByPlan) {
     const fallback = navForRole(user.role)[0];
     redirect(fallback ? fallback.href : "/login");
   }

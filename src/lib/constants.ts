@@ -65,6 +65,8 @@ export type NavItem = {
   label: string;
   icon: string;
   roles: StaffRole[];
+  // Minimum plan tier required, if any. Unset means available on every tier (Solo included).
+  minTier?: "SOLO" | "PRACTICE" | "FIRM";
 };
 
 export const NAV: NavItem[] = [
@@ -116,6 +118,7 @@ export const NAV: NavItem[] = [
     label: "Financials",
     icon: "\u{1F4B0}",
     roles: ["ADMINISTRATOR", "PARTNER", "ACCOUNTS_OFFICER"],
+    minTier: "PRACTICE",
   },
   {
     id: "compliance",
@@ -123,6 +126,7 @@ export const NAV: NavItem[] = [
     label: "Compliance",
     icon: "\u{1F512}",
     roles: ["ADMINISTRATOR", "PARTNER", "LEGAL_PRACTITIONER"],
+    minTier: "PRACTICE",
   },
   {
     id: "ai",
@@ -163,6 +167,14 @@ export const NAV: NavItem[] = [
 
 export function navForRole(role: StaffRole): NavItem[] {
   return NAV.filter((n) => n.roles.includes(role));
+}
+
+const TIER_RANK: Record<"SOLO" | "PRACTICE" | "FIRM", number> = { SOLO: 0, PRACTICE: 1, FIRM: 2 };
+
+// Nav visibility only — the actual page load is enforced separately by requireNavAccess (see
+// src/lib/dal.ts), same "visibility vs authorization" split as role-based nav below.
+export function navForRoleAndPlan(role: StaffRole, planTier: "SOLO" | "PRACTICE" | "FIRM"): NavItem[] {
+  return navForRole(role).filter((n) => !n.minTier || TIER_RANK[planTier] >= TIER_RANK[n.minTier]);
 }
 
 export function fmtMoney(cents: number): string {
