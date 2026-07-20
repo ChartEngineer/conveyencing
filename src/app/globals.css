@@ -20,6 +20,8 @@
   --blue-bg: #e8f1fb;
   --radius: 10px;
   --shadow: 0 1px 2px rgba(15, 37, 64, 0.06), 0 1px 8px rgba(15, 37, 64, 0.04);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --focus-ring: 0 0 0 3px rgba(201, 162, 39, 0.4);
 }
 
 * {
@@ -32,7 +34,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
 }
 
 h1,
@@ -43,6 +45,8 @@ h4 {
   font-weight: 600;
   margin: 0;
   color: var(--navy);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 a {
@@ -52,6 +56,30 @@ a {
 button {
   font-family: inherit;
   cursor: pointer;
+}
+
+/* Brand-consistent focus ring (gold, not the browser-default blue) — visible keyboard
+   focus is an accessibility requirement, not a nice-to-have. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-item:focus-visible,
+.pill-btn:focus-visible,
+.chk:focus-visible,
+.doc-card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* ---------- App shell ---------- */
@@ -127,7 +155,7 @@ button {
   margin-bottom: 2px;
   text-decoration: none;
   cursor: pointer;
-  transition: 0.12s;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -168,7 +196,8 @@ button {
   z-index: 20;
 }
 .topbar h1 {
-  font-size: 19px;
+  font-size: 20px;
+  letter-spacing: -0.015em;
 }
 .topbar .sub {
   font-size: 12.5px;
@@ -235,6 +264,7 @@ button {
 }
 .stat-card {
   padding: 16px 18px;
+  border-top: 2px solid var(--gold);
 }
 .stat-card .label {
   font-size: 11.5px;
@@ -244,10 +274,12 @@ button {
   margin-bottom: 6px;
 }
 .stat-card .value {
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 700;
   color: var(--navy);
   font-family: Georgia, serif;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .stat-card .delta {
   font-size: 12px;
@@ -270,8 +302,11 @@ button {
   font-size: 13px;
   font-weight: 600;
   border: 1px solid transparent;
-  transition: 0.12s;
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease), transform 0.1s var(--ease);
   white-space: nowrap;
+}
+.btn:active:not([disabled]) {
+  transform: translateY(1px);
 }
 .btn-primary {
   background: var(--navy);
@@ -645,12 +680,15 @@ tr:hover td {
   border-radius: 9px;
   padding: 14px;
   cursor: pointer;
-  transition: 0.12s;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease), transform 0.1s var(--ease);
   background: #fff;
 }
 .doc-card:hover {
   border-color: var(--gold);
   box-shadow: var(--shadow);
+}
+.doc-card:active {
+  transform: translateY(1px);
 }
 .doc-card .ic {
   font-size: 22px;
@@ -679,6 +717,7 @@ tr:hover td {
   justify-content: center;
   font-size: 10px;
   background: none;
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease);
 }
 .chk.on {
   background: var(--green);
@@ -689,6 +728,7 @@ tr:hover td {
   position: fixed;
   inset: 0;
   background: rgba(15, 25, 40, 0.45);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -746,6 +786,28 @@ tr:hover td {
   line-height: 1.65;
   white-space: pre-wrap;
   color: #28303a;
+}
+
+/* ---------- Loading skeleton ---------- */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skel {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e9edf3 25%, #f4f6f9 37%, #e9edf3 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel {
+    animation: none;
+    background: #eef1f5;
+  }
 }
 
 @media print {
