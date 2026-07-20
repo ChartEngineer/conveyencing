@@ -23,6 +23,7 @@ export default function NewMatterWizard({
   const [stepError, setStepError] = useState("");
   const [addNewClient, setAddNewClient] = useState(clients.length === 0);
   const [addNewProperty, setAddNewProperty] = useState(properties.length === 0);
+  const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   function fieldValue(name: string) {
@@ -86,7 +87,7 @@ export default function NewMatterWizard({
         ))}
       </div>
 
-      <form ref={formRef} action={createMatterFromWizard}>
+      <form ref={formRef} action={createMatterFromWizard} onSubmit={() => setSubmitting(true)}>
         {/* Step 1: Parties — kept mounted (display:none when inactive) so field values survive navigation */}
         <div style={{ display: step === 1 ? "block" : "none" }}>
           <div className="field">
@@ -280,12 +281,12 @@ export default function NewMatterWizard({
             <span />
           )}
           {step < 3 ? (
-            <button type="button" className="btn btn-primary" onClick={next}>
+            <button type="button" className="btn btn-primary" onClick={next} disabled={submitting}>
               Next
             </button>
           ) : (
-            <button type="submit" className="btn btn-primary">
-              Create Matter
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? "Creating…" : "Create Matter"}
             </button>
           )}
         </div>
