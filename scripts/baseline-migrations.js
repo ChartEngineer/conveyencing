@@ -15,6 +15,7 @@ const MIGRATIONS = [
   "20260718120000_add_matter_collaborators",
   "20260719120000_add_demo_flags",
   "20260720120000_add_subscription",
+  "20260720130000_fix_subscription_singleton",
 ];
 
 async function main() {

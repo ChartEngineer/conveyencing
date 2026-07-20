@@ -318,7 +318,10 @@ model MatterCollaborator {
 // is a stub: `status` and the credit counters are read and written by the app, but nothing here
 // ever talks to a real payment provider. See COMPLIANCE-NOTES.md.
 model Subscription {
-  id              String   @id @default(cuid())
+  // Fixed singleton id (not cuid()) so concurrent first-access calls can use an atomic upsert
+  // instead of a check-then-create race — the latter created 17 duplicate rows in one deploy
+  // when Vercel's build ran multiple workers against this table concurrently.
+  id              String   @id @default("singleton")
   tier            PlanTier @default(SOLO)
   seats           Int      @default(1)
   trialEndsAt     DateTime?

@@ -3,11 +3,15 @@ import { prisma } from "@/lib/db";
 import { tierAtLeast, type PlanTier } from "@/lib/plans";
 
 // Singleton row — this app is single-tenant per deployment (one instance = one firm), so there's
-// exactly one Subscription record, created lazily on first read.
+// exactly one Subscription record, at the fixed id "singleton" (see the schema's @default).
+// Uses upsert (a single atomic INSERT ... ON CONFLICT) rather than findFirst-then-create, since
+// the latter raced under concurrent access and created duplicate rows in production.
 export async function getSubscription() {
-  const existing = await prisma.subscription.findFirst();
-  if (existing) return existing;
-  return prisma.subscription.create({ data: {} });
+  return prisma.subscription.upsert({
+    where: { id: "singleton" },
+    create: {},
+    update: {},
+  });
 }
 
 export type GatedFeature = "financials" | "compliance" | "multiBranch" | "auditExport";
