@@ -13,6 +13,7 @@ const MIGRATIONS = [
   "20260717130000_add_files_and_messages",
   "20260717140000_add_immutability_triggers",
   "20260718120000_add_matter_collaborators",
+  "20260719120000_add_demo_flags",
 ];
 
 async function main() {

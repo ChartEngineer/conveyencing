@@ -152,6 +152,13 @@ export const NAV: NavItem[] = [
     icon: "\u{1F511}",
     roles: ["ADMINISTRATOR"],
   },
+  {
+    id: "settings",
+    href: "/settings",
+    label: "Settings",
+    icon: "\u{2699}",
+    roles: ["ADMINISTRATOR"],
+  },
 ];
 
 export function navForRole(role: StaffRole): NavItem[] {

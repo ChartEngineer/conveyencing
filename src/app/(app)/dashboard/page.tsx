@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { STAGES, fmtMoney, fmtDate } from "@/lib/constants";
-import { PriorityBadge } from "@/components/badges";
+import { PriorityBadge, StageBadge } from "@/components/badges";
 import BarChart from "@/components/bar-chart";
 import { requireNavAccess } from "@/lib/dal";
 
@@ -185,7 +185,10 @@ export default async function DashboardPage() {
                     </td>
                     <td>{m.property.standNo}</td>
                     <td>{m.clients.map((c) => c.client.name).join(" & ")}</td>
-                    <td>{STAGES[m.stageIndex]}</td>
+                    <td>
+                      <StageBadge idx={m.stageIndex} />
+                      <div className="small muted mt8">{STAGES[m.stageIndex]}</div>
+                    </td>
                     <td style={{ width: 120 }}>
                       <div className="progress-bar">
                         <div style={{ width: `${Math.round((m.stageIndex / 10) * 100)}%` }} />

@@ -15,7 +15,7 @@ export default async function NotFound() {
         background: "linear-gradient(180deg, var(--navy), var(--navy-2))",
       }}
     >
-      <div className="card" style={{ width: 420, textAlign: "center" }}>
+      <div className="card" style={{ width: "min(420px, 92vw)", textAlign: "center" }}>
         <div className="flex gap8 mb20" style={{ alignItems: "center", justifyContent: "center" }}>
           <div className="brand-mark" style={{ background: "var(--gold)", color: "var(--navy)" }}>
             D

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem, StaffRole } from "@/lib/constants";
@@ -19,18 +20,22 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   portal: { title: "Client Portal", subtitle: "Track your property transfer in real time" },
   users: { title: "Staff Users", subtitle: "Manage staff accounts and access" },
   collab: { title: "Shared Matters", subtitle: "Matters you've been given access to collaborate on" },
+  settings: { title: "Settings", subtitle: "Demo data, plan, and integrations" },
 };
 
 export default function Shell({
   nav,
   user,
+  demoActive,
   children,
 }: {
   nav: NavItem[];
   user: { name: string; role: StaffRole };
+  demoActive?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const activeId = nav.find((n) => pathname.startsWith(n.href))?.id ?? "";
   const meta = PAGE_META[activeId] ?? { title: "Deeds360", subtitle: "" };
   const initials = user.name
@@ -41,7 +46,8 @@ export default function Shell({
 
   return (
     <div id="app">
-      <div className="sidebar no-print">
+      {menuOpen && <div className="sidebar-overlay no-print" onClick={() => setMenuOpen(false)} />}
+      <div className={`sidebar no-print ${menuOpen ? "open" : ""}`}>
         <div className="brand">
           <div className="brand-mark">D</div>
           <div className="brand-text">
@@ -52,7 +58,7 @@ export default function Shell({
         <div className="nav">
           <div className="nav-section">Practice</div>
           {nav.map((n) => (
-            <Link key={n.id} href={n.href} className={`nav-item ${activeId === n.id ? "active" : ""}`}>
+            <Link key={n.id} href={n.href} className={`nav-item ${activeId === n.id ? "active" : ""}`} onClick={() => setMenuOpen(false)}>
               <span className="ic">{n.icon}</span>
               <span>{n.label}</span>
             </Link>
@@ -69,16 +75,28 @@ export default function Shell({
       </div>
       <div className="main">
         <div className="topbar no-print">
-          <div>
-            <h1>{meta.title}</h1>
-            <div className="sub">{meta.subtitle}</div>
+          <div className="flex gap8" style={{ alignItems: "center" }}>
+            <button className="menu-toggle no-print" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
+              ☰
+            </button>
+            <div>
+              <h1>{meta.title}</h1>
+              <div className="sub">{meta.subtitle}</div>
+            </div>
           </div>
           <div className="top-right">
             <div className="small muted">{STAFF_ROLE_LABELS[user.role]}</div>
             <div className="avatar">{initials || "U"}</div>
           </div>
         </div>
-        <div className="content">{children}</div>
+        <div className="content">
+          {demoActive && (
+            <div className="demo-banner">
+              Demo data is active — visible to everyone. An administrator can clear it from Settings before real use.
+            </div>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );

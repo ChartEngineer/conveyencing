@@ -25,7 +25,7 @@ export default async function LoginPage() {
         background: "linear-gradient(180deg, var(--navy), var(--navy-2))",
       }}
     >
-      <div className="card" style={{ width: 380 }}>
+      <div className="card" style={{ width: "min(380px, 92vw)" }}>
         <div className="flex gap8 mb20" style={{ alignItems: "center" }}>
           <div className="brand-mark" style={{ background: "var(--gold)", color: "var(--navy)" }}>
             D

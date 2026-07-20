@@ -113,6 +113,7 @@ model Client {
   address   String?
   kyc       KycStatus  @default(NOT_STARTED)
   conflict  Boolean    @default(false)
+  isDemo    Boolean    @default(false)
   createdAt DateTime   @default(now())
 
   portalUser   User?   @relation("ClientPortalUser", fields: [portalUserId], references: [id])
@@ -132,6 +133,7 @@ model Property {
   size           String
   valuationCents Int
   gps            String
+  isDemo         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   owners  PropertyOwner[]
@@ -161,6 +163,7 @@ model Matter {
   responsibleId String
   priority      Priority     @default(MEDIUM)
   agent         String?
+  isDemo        Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -242,6 +245,7 @@ model Task {
   dueDate      DateTime
   priority     Priority   @default(MEDIUM)
   status       TaskStatus @default(OPEN)
+  isDemo       Boolean    @default(false)
   createdAt    DateTime   @default(now())
 }
 
@@ -257,6 +261,7 @@ model Invoice {
   status             InvoiceStatus @default(OUTSTANDING)
   date               DateTime
   dueDate            DateTime
+  isDemo             Boolean       @default(false)
 }
 
 model TrustTransaction {
