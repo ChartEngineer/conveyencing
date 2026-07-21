@@ -4,6 +4,8 @@ import { STAGES, fmtMoney, fmtDate } from "@/lib/constants";
 import { PriorityBadge, StageBadge } from "@/components/badges";
 import BarChart from "@/components/bar-chart";
 import { requireNavAccess } from "@/lib/dal";
+import { getSubscription, canUseFeature } from "@/lib/entitlements";
+import { PLANS } from "@/lib/plans";
 
 export default async function DashboardPage() {
   await requireNavAccess("dashboard");
@@ -24,6 +26,7 @@ export default async function DashboardPage() {
     kycPending,
     clientCount,
     propertyCount,
+    subscription,
   ] = await Promise.all([
     prisma.matter.count({ where: { status: "ACTIVE" } }),
     prisma.matter.count({ where: { status: "CLOSED" } }),
@@ -44,7 +47,10 @@ export default async function DashboardPage() {
     prisma.client.count({ where: { kyc: { not: "VERIFIED" } } }),
     prisma.client.count(),
     prisma.property.count(),
+    getSubscription(),
   ]);
+
+  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
 
   const revenue = invoicesByStatus
     .filter((g) => g.status === "PAID")
@@ -111,15 +117,34 @@ export default async function DashboardPage() {
           <div className="label">Completed Transfers</div>
           <div className="value">{closed}</div>
         </div>
-        <div className="card stat-card">
-          <div className="label">Revenue Collected</div>
-          <div className="value">{fmtMoney(revenue)}</div>
-        </div>
-        <div className="card stat-card">
-          <div className="label">Outstanding Balance</div>
-          <div className="value">{fmtMoney(outstanding)}</div>
-          <div className="delta down">{overdueCount} overdue invoice(s)</div>
-        </div>
+        {financialsUnlocked ? (
+          <>
+            <div className="card stat-card">
+              <div className="label">Revenue Collected</div>
+              <div className="value">{fmtMoney(revenue)}</div>
+            </div>
+            <div className="card stat-card">
+              <div className="label">Outstanding Balance</div>
+              <div className="value">{fmtMoney(outstanding)}</div>
+              <div className="delta down">{overdueCount} overdue invoice(s)</div>
+            </div>
+          </>
+        ) : (
+          <div className="card stat-card" style={{ gridColumn: "span 2" }}>
+            <div className="flex-between mb8">
+              <div className="label" style={{ marginBottom: 0 }}>
+                Financials
+              </div>
+              <span className="badge badge-gold">{PLANS.PRACTICE.name}+</span>
+            </div>
+            <div className="small muted mb12">
+              Fee, disbursement, trust and invoice tracking is available on the {PLANS.PRACTICE.name} plan and above.
+            </div>
+            <Link className="btn btn-ghost btn-sm" href="/settings">
+              View plans →
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-2 mb16">
