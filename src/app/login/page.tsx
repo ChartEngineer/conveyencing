@@ -16,28 +16,22 @@ export default async function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(180deg, var(--navy), var(--navy-2))",
-      }}
-    >
-      <div className="card" style={{ width: "min(380px, 92vw)" }}>
-        <div className="flex gap8 mb20" style={{ alignItems: "center" }}>
-          <div className="brand-mark" style={{ background: "var(--gold)", color: "var(--navy)" }}>
-            D
-          </div>
-          <div>
-            <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 18, color: "var(--navy)" }}>
-              Deeds360
-            </div>
-            <div className="small muted">Conveyancing &amp; Legal Practice Suite</div>
+    <div className="login-scene">
+      <div className="login-scene-texture" aria-hidden="true" />
+      <div className="login-scene-inner">
+        <div className="login-mark">
+          <span className="login-mark-glyph">D</span>
+          <div className="login-mark-text">
+            <div className="login-mark-title">Deeds360</div>
+            <div className="login-mark-kicker">Conveyancing &amp; Legal Practice Suite</div>
           </div>
         </div>
-        <LoginForm />
+        <p className="login-tagline">
+          From opening a matter to lodging the deed — one record of title, from instruction to registration.
+        </p>
+        <div className="card login-card">
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

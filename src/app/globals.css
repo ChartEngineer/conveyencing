@@ -82,6 +82,89 @@ textarea:focus-visible,
   }
 }
 
+/* ---------- Login ---------- */
+/* The first screen a visitor sees: the practice's own ledger, not a generic auth card. The
+   contour texture reads as survey/cadastral lines — the same visual language as the property
+   records (stand no., survey diagram, GPS) this app manages — anchored to one corner rather
+   than tiled, so it stays a deliberate mark rather than wallpaper. */
+.login-scene {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(165deg, var(--navy) 0%, var(--navy-2) 55%, var(--navy-3) 100%);
+  overflow: hidden;
+  padding: 24px;
+}
+.login-scene-texture {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("/textures/contour-corner.svg");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: min(60vw, 640px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.login-scene-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.login-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.login-mark-glyph {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--gold);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: 19px;
+  flex-shrink: 0;
+}
+.login-mark-title {
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: 21px;
+  color: #fff;
+  line-height: 1.1;
+}
+.login-mark-kicker {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9fb2cc;
+  margin-top: 2px;
+}
+.login-tagline {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: #c3d2e6;
+  text-align: center;
+  max-width: 380px;
+  line-height: 1.5;
+  margin: 0 0 26px;
+  text-wrap: balance;
+}
+.login-card {
+  width: min(380px, 92vw);
+}
+
 /* ---------- App shell ---------- */
 #app {
   display: flex;
@@ -92,6 +175,9 @@ textarea:focus-visible,
   width: 236px;
   flex-shrink: 0;
   background: linear-gradient(180deg, var(--navy), var(--navy-2));
+  background-image: url("/textures/contour-tile.svg"), linear-gradient(180deg, var(--navy), var(--navy-2));
+  background-repeat: repeat, no-repeat;
+  background-size: 220px 220px, 100% 100%;
   color: #dce6f2;
   display: flex;
   flex-direction: column;
