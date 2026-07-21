@@ -243,7 +243,7 @@ export default function NewMatterWizard({
           <div className="field-row">
             <div className="field">
               <label htmlFor="price">Agreed Price (US$)</label>
-              <input id="price" name="price" type="number" defaultValue={100000} />
+              <input id="price" name="price" type="number" min="1" step="1" placeholder="e.g. 185000" required />
             </div>
             <div className="field">
               <label htmlFor="priority">Priority</label>
