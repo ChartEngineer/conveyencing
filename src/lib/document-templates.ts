@@ -1,11 +1,15 @@
 export type PartyLike = { id: string; role: string };
 
-// Not every matter has a clean seller+buyer pair (e.g. Bond Registration is buyer+bank) — this
-// picks the best available fallback while guaranteeing seller and buyer never resolve to the same
-// party, which previously caused Agreement of Sale documents to list one person as both sides.
+// Resolves the seller and buyer strictly from role tags (BUYER/BOTH for buyer, SELLER/BOTH for
+// seller), always excluding whichever party already filled the other slot. Unlike the previous
+// version, this never falls back to clients[0] for a missing role — a matter with only one party,
+// or no seller-role party, comes back with seller: undefined rather than silently reusing the
+// buyer, which previously let Agreement of Sale documents name one person as both sides.
 export function resolveSellerAndBuyer<T extends PartyLike>(clients: T[]): { seller: T | undefined; buyer: T | undefined } {
-  const buyer = clients.find((c) => c.role === "BUYER") ?? clients[0];
-  const seller = clients.find((c) => c.role === "SELLER") ?? clients.find((c) => c.id !== buyer?.id) ?? clients[0];
+  const buyer = clients.find((c) => c.role === "BUYER") ?? clients.find((c) => c.role === "BOTH");
+  const seller =
+    clients.find((c) => c.role === "SELLER" && c.id !== buyer?.id) ??
+    clients.find((c) => c.role === "BOTH" && c.id !== buyer?.id);
   return { seller, buyer };
 }
 
@@ -18,6 +22,10 @@ export type DocMatterData = {
   property: { standNo: string; suburb: string; city: string; titleDeedNo: string; surveyDiagram: string; size: string };
   seller: { name: string; idNumber: string; address: string };
   buyer: { name: string; idNumber: string; address: string };
+  // False when the matter doesn't have two distinct resolvable parties (e.g. only one party
+  // recorded, or no seller-role party) — every template here names both sides, so generation
+  // must be blocked rather than rendering a placeholder or duplicate name into a legal document.
+  partiesComplete: boolean;
 };
 
 export const DOC_TEMPLATES = [
@@ -39,7 +47,17 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+// Thrown by generateDocument itself, independent of whatever the caller already checked — every
+// template below names both a seller and a buyer, so this is a second, defense-in-depth guard
+// against the matter-creation flow ever having let an incomplete matter through.
+export class IncompletePartiesError extends Error {}
+
 export function generateDocument(templateId: string, m: DocMatterData): { title: string; body: string } {
+  if (!m.partiesComplete) {
+    throw new IncompletePartiesError(
+      "This matter doesn't have two distinct parties on record (a buyer and a seller). Add the missing party on the matter before generating this document.",
+    );
+  }
   const { property: prop, seller, buyer } = m;
   const today = fmtDate(new Date().toISOString());
 

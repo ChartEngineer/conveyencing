@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DOC_TEMPLATES, generateDocument, type DocMatterData } from "@/lib/document-templates";
+import { DOC_TEMPLATES, generateDocument, IncompletePartiesError, type DocMatterData } from "@/lib/document-templates";
 import { recordDocGeneration } from "@/app/actions/documents";
 import EmptyState from "@/components/empty-state";
 
@@ -9,6 +9,7 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
   const [matterId, setMatterId] = useState(matters[0]?.id ?? "");
   const [doc, setDoc] = useState<{ title: string; body: string } | null>(null);
   const [paywall, setPaywall] = useState<{ limit: number } | null>(null);
+  const [partyError, setPartyError] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const matter = matters.find((m) => m.id === matterId);
@@ -28,6 +29,10 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
 
   async function open(templateId: string) {
     if (!matter || generating) return;
+    if (!matter.partiesComplete) {
+      setPartyError(true);
+      return;
+    }
     setGenerating(true);
     try {
       const result = await recordDocGeneration();
@@ -36,6 +41,12 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
         return;
       }
       setDoc(generateDocument(templateId, matter));
+    } catch (err) {
+      if (err instanceof IncompletePartiesError) {
+        setPartyError(true);
+      } else {
+        throw err;
+      }
     } finally {
       setGenerating(false);
     }
@@ -79,6 +90,11 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
             </option>
           ))}
         </select>
+        {matter && !matter.partiesComplete && (
+          <div className="hint" style={{ color: "var(--red)" }}>
+            This matter is missing a buyer or seller — documents can&apos;t be generated until both parties are recorded.
+          </div>
+        )}
       </div>
       <div className="grid grid-4">
         {DOC_TEMPLATES.map((t) => (
@@ -90,6 +106,31 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
           </div>
         ))}
       </div>
+
+      {partyError && (
+        <div className="overlay" onClick={(e) => e.target === e.currentTarget && setPartyError(false)}>
+          <div className="modal">
+            <div className="modal-head">
+              <h3>Missing a party</h3>
+              <button className="x-close" onClick={() => setPartyError(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="small">
+                This document names both the seller and the buyer, but this matter doesn&apos;t have two distinct
+                parties on record. Add the missing party (Buyer or Seller) on the matter before generating it —
+                otherwise the document would be legally meaningless.
+              </p>
+            </div>
+            <div className="modal-foot">
+              <button className="btn btn-ghost" onClick={() => setPartyError(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {paywall && (
         <div className="overlay" onClick={(e) => e.target === e.currentTarget && setPaywall(null)}>

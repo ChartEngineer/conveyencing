@@ -30,6 +30,7 @@ export default async function DocumentsPage() {
       },
       seller: { name: seller?.name ?? "—", idNumber: seller?.idNumber ?? "—", address: seller?.address ?? "—" },
       buyer: { name: buyer?.name ?? "—", idNumber: buyer?.idNumber ?? "—", address: buyer?.address ?? "—" },
+      partiesComplete: Boolean(seller && buyer),
     };
   });
 
