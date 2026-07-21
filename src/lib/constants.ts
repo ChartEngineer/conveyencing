@@ -12,18 +12,21 @@ export const STAGES = [
   "Matter Closed",
 ] as const;
 
-export const STAGE_META: Record<string, { days: number; role: string; docs: string[] }> = {
-  "Matter Opened": { days: 1, role: "Conveyancing Secretary", docs: ["Client instruction form"] },
-  "Instruction Received": { days: 2, role: "Legal Practitioner", docs: ["Signed mandate", "Copies of ID/passport"] },
-  "Due Diligence": { days: 7, role: "Conveyancing Secretary", docs: ["Deeds Office search", "Title deed copy", "Survey diagram"] },
-  "Agreement of Sale": { days: 5, role: "Legal Practitioner", docs: ["Signed Agreement of Sale"] },
-  "Tax Clearance": { days: 10, role: "Accounts Officer", docs: ["ZIMRA tax clearance certificate"] },
-  "Rates Clearance": { days: 10, role: "Conveyancing Secretary", docs: ["Local authority rates clearance"] },
-  "Transfer Duty": { days: 5, role: "Accounts Officer", docs: ["Transfer duty receipt (ZIMRA)"] },
-  "Deeds Office Submission": { days: 3, role: "Legal Practitioner", docs: ["Lodgement cover", "Draft deed of transfer"] },
-  Registration: { days: 21, role: "Clerk", docs: ["Deeds Office registration confirmation"] },
-  "Title Deed Released": { days: 5, role: "Conveyancing Secretary", docs: ["Original title deed"] },
-  "Matter Closed": { days: 2, role: "Partner", docs: ["Final statement", "Client handover letter"] },
+// role is the StaffRole allowed to advance out of that stage (an Administrator or Partner may
+// always override — see advanceStage in src/app/actions/matters.ts, which enforces this
+// server-side; STAFF_ROLE_LABELS[...] gives the display string).
+export const STAGE_META: Record<string, { days: number; role: StaffRole; docs: string[] }> = {
+  "Matter Opened": { days: 1, role: "CONVEYANCING_SECRETARY", docs: ["Client instruction form"] },
+  "Instruction Received": { days: 2, role: "LEGAL_PRACTITIONER", docs: ["Signed mandate", "Copies of ID/passport"] },
+  "Due Diligence": { days: 7, role: "CONVEYANCING_SECRETARY", docs: ["Deeds Office search", "Title deed copy", "Survey diagram"] },
+  "Agreement of Sale": { days: 5, role: "LEGAL_PRACTITIONER", docs: ["Signed Agreement of Sale"] },
+  "Tax Clearance": { days: 10, role: "ACCOUNTS_OFFICER", docs: ["ZIMRA tax clearance certificate"] },
+  "Rates Clearance": { days: 10, role: "CONVEYANCING_SECRETARY", docs: ["Local authority rates clearance"] },
+  "Transfer Duty": { days: 5, role: "ACCOUNTS_OFFICER", docs: ["Transfer duty receipt (ZIMRA)"] },
+  "Deeds Office Submission": { days: 3, role: "LEGAL_PRACTITIONER", docs: ["Lodgement cover", "Draft deed of transfer"] },
+  Registration: { days: 21, role: "CLERK", docs: ["Deeds Office registration confirmation"] },
+  "Title Deed Released": { days: 5, role: "CONVEYANCING_SECRETARY", docs: ["Original title deed"] },
+  "Matter Closed": { days: 2, role: "PARTNER", docs: ["Final statement", "Client handover letter"] },
 };
 
 export type StaffRole =

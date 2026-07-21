@@ -4,12 +4,32 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { verifySession } from "@/lib/dal";
-import { STAGES, STAGE_META } from "@/lib/constants";
+import { STAGES, STAGE_META, STAFF_ROLE_LABELS } from "@/lib/constants";
+
+// Administrator/Partner may advance any stage regardless of the stage's assigned role — but
+// unlike before, that's now an explicit, logged override rather than silently indistinguishable
+// from a normal in-role advance (see the note/audit text below).
+const OVERRIDE_ROLES = new Set(["ADMINISTRATOR", "PARTNER"]);
 
 export async function advanceStage(matterId: string) {
-  await verifySession();
+  const session = await verifySession();
   const matter = await prisma.matter.findUniqueOrThrow({ where: { id: matterId } });
   if (matter.stageIndex >= STAGES.length - 1) return;
+
+  const currentStage = STAGES[matter.stageIndex];
+  const requiredRole = STAGE_META[currentStage].role;
+  const isOverride = session.role !== requiredRole && OVERRIDE_ROLES.has(session.role);
+
+  if (session.role !== requiredRole && !isOverride) {
+    redirect(`/matters/${matterId}?stageError=role`);
+  }
+
+  const incompleteDocs = await prisma.matterDocumentCheck.count({
+    where: { matterId, stage: currentStage, done: false },
+  });
+  if (incompleteDocs > 0) {
+    redirect(`/matters/${matterId}?stageError=docs`);
+  }
 
   const nextIndex = matter.stageIndex + 1;
   const nextStage = STAGES[nextIndex];
@@ -24,12 +44,17 @@ export async function advanceStage(matterId: string) {
     }),
   ]);
 
-  const session = await verifySession();
-  await prisma.matterNote.create({
-    data: { matterId, authorId: session.userId, text: `Advanced to stage: ${nextStage}.` },
-  });
+  const noteText = isOverride
+    ? `Advanced to stage: ${nextStage} (override by ${STAFF_ROLE_LABELS[session.role]} — normally requires ${STAFF_ROLE_LABELS[requiredRole]}).`
+    : `Advanced to stage: ${nextStage}.`;
+  await prisma.matterNote.create({ data: { matterId, authorId: session.userId, text: noteText } });
   await prisma.auditLogEntry.create({
-    data: { userId: session.userId, action: `Advanced ${matter.reference} to stage: ${nextStage}` },
+    data: {
+      userId: session.userId,
+      action: isOverride
+        ? `Advanced ${matter.reference} to stage: ${nextStage} (role override)`
+        : `Advanced ${matter.reference} to stage: ${nextStage}`,
+    },
   });
 
   revalidatePath(`/matters/${matterId}`);

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
-import { STAGES, STAGE_META, fmtMoney, fmtDate, addDays, COLLABORATOR_ROLE_LABELS } from "@/lib/constants";
+import { STAGES, STAGE_META, STAFF_ROLE_LABELS, fmtMoney, fmtDate, addDays, COLLABORATOR_ROLE_LABELS } from "@/lib/constants";
 import { PriorityBadge, KycBadge } from "@/components/badges";
 import { advanceStage, toggleDocCheck, addNote } from "@/app/actions/matters";
 import { uploadMatterFile } from "@/app/actions/files";
@@ -22,12 +22,12 @@ export default async function MatterDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ invited?: string }>;
+  searchParams: Promise<{ invited?: string; stageError?: string }>;
 }) {
   const user = await requireNavAccess("matters");
   const canViewSensitive = canViewSensitiveData(user.role);
   const { id } = await params;
-  const { invited } = await searchParams;
+  const { invited, stageError } = await searchParams;
 
   const matter = await prisma.matter.findUnique({
     where: { id },
@@ -95,6 +95,16 @@ export default async function MatterDetailPage({
         </div>
       </div>
 
+      {stageError && (
+        <div className="card mb16" style={{ borderColor: "var(--red)", background: "var(--red-bg)" }}>
+          <div className="small" style={{ color: "var(--red)" }}>
+            {stageError === "role"
+              ? `Can't advance — this stage requires the ${STAFF_ROLE_LABELS[meta.role]} role (or an Administrator/Partner override).`
+              : `Can't advance — the required documents for ${stageName} aren't all marked done yet.`}
+          </div>
+        </div>
+      )}
+
       <div className="card mb16">
         <h3>Conveyancing Workflow</h3>
         <div className="stepper">
@@ -111,7 +121,7 @@ export default async function MatterDetailPage({
             <span className="muted">Current stage:</span> <b>{stageName}</b>
           </div>
           <div className="small">
-            <span className="muted">Responsible role:</span> <b>{meta.role}</b>
+            <span className="muted">Responsible role:</span> <b>{STAFF_ROLE_LABELS[meta.role]}</b>
           </div>
           <div className="small">
             <span className="muted">Target date this stage:</span> <b>{fmtDate(target)}</b>
