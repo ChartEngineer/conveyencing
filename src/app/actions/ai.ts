@@ -5,29 +5,35 @@ import { prisma } from "@/lib/db";
 import { anthropic } from "@/lib/anthropic";
 import { STAGES, fmtMoney } from "@/lib/constants";
 import { getSubscription } from "@/lib/entitlements";
+import { type AiAssistantMode, zimbabweIpSystemPrompt } from "@/lib/zimbabwe-ip-research";
 
-const SYSTEM_PROMPT = `You are the AI assistant embedded in Deeds360, a legal practice management system used by a Zimbabwean conveyancing firm.
+const CONVEYANCING_SYSTEM_PROMPT = `You are the AI assistant embedded in Deeds360, a legal practice management system used by a Zimbabwean conveyancing firm.
 
 You help staff with general questions about the Zimbabwe property transfer / conveyancing process (transfer duty, rates clearance, ZIMRA tax clearance, Deeds Office procedure, due diligence documents, typical timelines) and with questions about the firm's current matters, which are listed below.
 
 Keep answers concise and practical. Always make clear that your answers are general information, not legal advice, and that a registered legal practitioner must review anything before it is relied upon. If asked something outside the conveyancing / legal-practice-management scope, say so briefly and redirect the user to their practitioner.`;
 
-export async function askAiAssistant(question: string): Promise<string> {
+export async function askAiAssistant(question: string, requestedMode: AiAssistantMode = "CONVEYANCING"): Promise<string> {
   await getCurrentUser();
 
   const trimmed = question.trim();
   if (!trimmed) return "Please enter a question.";
+
+  const mode: AiAssistantMode = requestedMode === "ZIMBABWE_IP" ? "ZIMBABWE_IP" : "CONVEYANCING";
 
   const subscription = await getSubscription();
   if (subscription.aiCreditsUsed >= subscription.aiCreditsLimit) {
     return "You've used all of this billing period's AI Assistant credits. Ask your administrator to upgrade the plan (Settings → Billing), or contact us to add more.";
   }
 
-  const matters = await prisma.matter.findMany({
-    include: { property: true, clients: { include: { client: true } }, responsible: true },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  const matters =
+    mode === "CONVEYANCING"
+      ? await prisma.matter.findMany({
+          include: { property: true, clients: { include: { client: true } }, responsible: true },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        })
+      : [];
 
   const matterContext =
     matters
@@ -39,11 +45,16 @@ export async function askAiAssistant(question: string): Promise<string> {
       )
       .join("\n") || "(no matters in the system yet)";
 
+  const system =
+    mode === "ZIMBABWE_IP"
+      ? zimbabweIpSystemPrompt()
+      : `${CONVEYANCING_SYSTEM_PROMPT}\n\nCurrent matters in the system:\n${matterContext}`;
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 1024,
-      system: `${SYSTEM_PROMPT}\n\nCurrent matters in the system:\n${matterContext}`,
+      max_tokens: mode === "ZIMBABWE_IP" ? 1400 : 1024,
+      system,
       messages: [{ role: "user", content: trimmed }],
     });
 
