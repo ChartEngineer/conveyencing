@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireNavAccess } from "@/lib/dal";
-import { getSubscription } from "@/lib/entitlements";
+import { canUseFeature, getSubscription } from "@/lib/entitlements";
 import { PLANS, TIER_ORDER } from "@/lib/plans";
 import { seedDemoData, clearDemoData } from "@/app/actions/demo";
 import { setPlanTier } from "@/app/actions/billing";
@@ -22,14 +22,15 @@ export default async function SettingsPage() {
   ]);
   const isDemoActive = demoMatterCount > 0;
   const plan = PLANS[subscription.tier];
+  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
 
   return (
     <div className="grid grid-2">
       <div className="card">
         <h3>Demo Data</h3>
         <div className="small muted mb16">
-          Seed a realistic sample matter — two clients, a property, tasks, and an invoice — to demo Deeds360 to a
-          prospective firm without touching your real records. Clear it any time; it never mixes with real data.
+          Seed a realistic sample matter — two clients, a property, and tasks — to demo Deeds360 without touching your
+          real records. {financialsUnlocked ? "It also includes an invoice on your current plan." : "Invoices are included on the Practice plan and above."} Clear it any time; it never mixes with real data.
         </div>
         <div className="flex-between mb16">
           <span className="small">Status</span>
