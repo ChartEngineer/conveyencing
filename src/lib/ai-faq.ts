@@ -1,4 +1,4 @@
-export const SUGGESTED_QUESTIONS = [
+export const CONVEYANCING_SUGGESTED_QUESTIONS = [
   "What is transfer duty?",
   "What documents are needed for due diligence?",
   "How long does registration take?",
