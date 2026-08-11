@@ -39,6 +39,17 @@ export const DOC_TEMPLATES = [
   { id: "invoice", name: "Invoice", icon: "🧾" },
 ] as const;
 
+export type DocumentTemplateId = (typeof DOC_TEMPLATES)[number]["id"];
+
+// These templates expose financial information even though the rest of the document generator
+// is available on Solo. Keep the classification next to the template catalogue so the client
+// display and the server-side credit action share one source of truth.
+const FINANCIAL_DOCUMENT_TEMPLATE_IDS = new Set<DocumentTemplateId>(["receipt", "invoice"]);
+
+export function isFinancialDocumentTemplate(templateId: string): boolean {
+  return FINANCIAL_DOCUMENT_TEMPLATE_IDS.has(templateId as DocumentTemplateId);
+}
+
 function fmtMoney(cents: number) {
   return "US$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
