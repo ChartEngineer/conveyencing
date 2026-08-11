@@ -9,6 +9,8 @@ import { PLANS } from "@/lib/plans";
 
 export default async function DashboardPage() {
   await requireNavAccess("dashboard");
+  const subscription = await getSubscription();
+  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
 
   const in3Days = new Date();
   in3Days.setDate(in3Days.getDate() + 3);
@@ -16,7 +18,6 @@ export default async function DashboardPage() {
   const [
     active,
     closed,
-    invoicesByStatus,
     tasksDue,
     avgDaysResult,
     matterCountsByStage,
@@ -26,11 +27,10 @@ export default async function DashboardPage() {
     kycPending,
     clientCount,
     propertyCount,
-    subscription,
+    invoicesByStatus,
   ] = await Promise.all([
     prisma.matter.count({ where: { status: "ACTIVE" } }),
     prisma.matter.count({ where: { status: "CLOSED" } }),
-    prisma.invoice.groupBy({ by: ["status"], _sum: { feesCents: true, disbursementsCents: true }, _count: true }),
     prisma.task.count({ where: { status: { not: "DONE" }, dueDate: { lte: in3Days } } }),
     prisma.$queryRaw<
       { avg_days: number | null }[]
@@ -47,18 +47,20 @@ export default async function DashboardPage() {
     prisma.client.count({ where: { kyc: { not: "VERIFIED" } } }),
     prisma.client.count(),
     prisma.property.count(),
-    getSubscription(),
+    financialsUnlocked
+      ? prisma.invoice.groupBy({ by: ["status"], _sum: { feesCents: true, disbursementsCents: true }, _count: true })
+      : Promise.resolve(null),
   ]);
 
-  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
+  const invoiceReport = invoicesByStatus ?? [];
 
-  const revenue = invoicesByStatus
+  const revenue = invoiceReport
     .filter((g) => g.status === "PAID")
     .reduce((s, g) => s + (g._sum.feesCents ?? 0) + (g._sum.disbursementsCents ?? 0), 0);
-  const outstanding = invoicesByStatus
+  const outstanding = invoiceReport
     .filter((g) => g.status !== "PAID")
     .reduce((s, g) => s + (g._sum.feesCents ?? 0) + (g._sum.disbursementsCents ?? 0), 0);
-  const overdueCount = invoicesByStatus.find((g) => g.status === "OVERDUE")?._count ?? 0;
+  const overdueCount = invoiceReport.find((g) => g.status === "OVERDUE")?._count ?? 0;
 
   const avgDays = avgDaysResult[0]?.avg_days != null ? Math.round(Number(avgDaysResult[0].avg_days)) : 58;
 
