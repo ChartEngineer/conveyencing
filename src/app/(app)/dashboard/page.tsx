@@ -75,12 +75,27 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <section className="dashboard-welcome" aria-labelledby="dashboard-welcome-heading">
+        <div className="dashboard-welcome-copy">
+          <p className="dashboard-kicker">Practice command centre</p>
+          <h2 id="dashboard-welcome-heading">Keep every transfer moving with confidence.</h2>
+          <p>Monitor matters, deadlines, compliance, and financial progress from one clear operational view.</p>
+        </div>
+        <div className="dashboard-welcome-actions">
+          <Link className="btn btn-primary" href="/matters/new">
+            Open a matter
+          </Link>
+          <Link className="btn btn-ghost" href="/tasks/new">
+            Add a task
+          </Link>
+        </div>
+      </section>
       {clientCount === 0 && propertyCount === 0 && (
-        <div className="card mb16">
-          <h3>Get started</h3>
-          <div className="small muted mb16">A matter needs a client and a property. Three steps to your first one:</div>
-          <div className="grid grid-3">
-            <div>
+        <section className="card getting-started mb16" aria-labelledby="getting-started-heading">
+          <h3 id="getting-started-heading">Set up your first matter</h3>
+          <p className="small muted">Create the parties and property record, then open the matter that brings them together.</p>
+          <div className="getting-started-grid">
+            <div className="getting-started-step" data-step="1">
               <div className="small" style={{ fontWeight: 600 }}>
                 1. Register a client
               </div>
@@ -89,7 +104,7 @@ export default async function DashboardPage() {
                 + Register Client
               </Link>
             </div>
-            <div>
+            <div className="getting-started-step" data-step="2">
               <div className="small" style={{ fontWeight: 600 }}>
                 2. Register the property
               </div>
@@ -98,7 +113,7 @@ export default async function DashboardPage() {
                 + Register Property
               </Link>
             </div>
-            <div>
+            <div className="getting-started-step" data-step="3">
               <div className="small" style={{ fontWeight: 600 }}>
                 3. Open the matter
               </div>
@@ -108,10 +123,10 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </div>
-        </div>
+        </section>
       )}
-      <div className="grid grid-4 mb16">
-        <div className="card stat-card">
+      <section className="dashboard-stat-grid" aria-label="Firm performance summary">
+        <div className="card stat-card stat-card-lead">
           <div className="label">Active Matters</div>
           <div className="value">{active}</div>
         </div>
@@ -147,7 +162,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         )}
-      </div>
+      </section>
 
       <div className="grid grid-2 mb16">
         <div className="card">
