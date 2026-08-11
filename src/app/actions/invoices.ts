@@ -10,7 +10,7 @@ export async function setInvoiceStatus(invoiceId: string, status: "OUTSTANDING" 
   // and plan entitlement here rather than relying on the page-level guard alone.
   const session = await requireNavAccess("financials");
   const invoice = await prisma.invoice.update({ where: { id: invoiceId }, data: { status }, include: { matter: true } });
-  await logAudit(session.userId, `Marked invoice as ${status} — ${invoice.matter.reference}`);
+  await logAudit(session.id, `Marked invoice as ${status} — ${invoice.matter.reference}`);
   revalidatePath("/financials");
   revalidatePath("/dashboard");
 }
