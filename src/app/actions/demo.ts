@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/dal";
+import { canUseFeature, getSubscription } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { STAGES, STAGE_META } from "@/lib/constants";
 
@@ -11,6 +12,8 @@ export async function seedDemoData() {
   if (user.role !== "ADMINISTRATOR") {
     throw new Error("Only administrators can seed demo data.");
   }
+  const subscription = await getSubscription();
+  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
 
   await prisma.$transaction(async (tx) => {
     const buyer = await tx.client.create({
@@ -99,8 +102,9 @@ export async function seedDemoData() {
       ],
     });
 
-    await tx.invoice.create({
-      data: {
+    if (financialsUnlocked) {
+      await tx.invoice.create({
+        data: {
         matterId: matter.id,
         clientId: buyer.id,
         description: "Conveyancing fees — Stand 245 Borrowdale",
@@ -110,8 +114,9 @@ export async function seedDemoData() {
         date: new Date(),
         dueDate: new Date(Date.now() + 14 * 86400000),
         isDemo: true,
-      },
-    });
+        },
+      });
+    }
   });
 
   await logAudit(user.id, "Seeded demo data");
