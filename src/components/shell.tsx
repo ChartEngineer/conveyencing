@@ -46,8 +46,11 @@ export default function Shell({
 
   return (
     <div id="app">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       {menuOpen && <div className="sidebar-overlay no-print" onClick={() => setMenuOpen(false)} />}
-      <div className={`sidebar no-print ${menuOpen ? "open" : ""}`}>
+      <aside className={`sidebar no-print ${menuOpen ? "open" : ""}`} aria-label="Primary navigation">
         <div className="brand">
           <div className="brand-mark">D</div>
           <div className="brand-text">
@@ -55,29 +58,39 @@ export default function Shell({
             <div className="t2">Conveyancing Suite</div>
           </div>
         </div>
-        <div className="nav">
+        <nav className="nav" aria-label="Practice">
           <div className="nav-section">Practice</div>
           {nav.map((n) => (
-            <Link key={n.id} href={n.href} className={`nav-item ${activeId === n.id ? "active" : ""}`} onClick={() => setMenuOpen(false)}>
+            <Link
+              key={n.id}
+              href={n.href}
+              className={`nav-item ${activeId === n.id ? "active" : ""}`}
+              aria-current={activeId === n.id ? "page" : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
               <span className="ic">{n.icon}</span>
               <span>{n.label}</span>
             </Link>
           ))}
-        </div>
-        <div className="sidebar-foot">
+        </nav>
+        <footer className="sidebar-foot">
           Deeds360 — Zimbabwe conveyancing workflow
-          <form action={logout} className="mt8">
-            <button type="submit" style={{ background: "none", border: "none", color: "#c9d6e8", textDecoration: "underline", padding: 0, fontSize: "11.5px" }}>
+          <form action={logout} className="sign-out-form">
+            <button className="sign-out-button" type="submit">
               Sign out
             </button>
           </form>
-        </div>
-      </div>
-      <div className="main">
-        <div className="topbar no-print">
+        </footer>
+      </aside>
+      <section className="main">
+        <header className="topbar no-print">
           <div className="flex gap8" style={{ alignItems: "center" }}>
-            <button className="menu-toggle no-print" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
-              ☰
+            <button className="menu-toggle no-print" type="button" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
+              <span className="menu-toggle-bars" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
             </button>
             <div>
               <h1>{meta.title}</h1>
@@ -88,16 +101,16 @@ export default function Shell({
             <div className="small muted">{STAFF_ROLE_LABELS[user.role]}</div>
             <div className="avatar">{initials || "U"}</div>
           </div>
-        </div>
-        <div className="content">
+        </header>
+        <main id="main-content" className="content">
           {demoActive && (
             <div className="demo-banner">
               Demo data is active — visible to everyone. An administrator can clear it from Settings before real use.
             </div>
           )}
           {children}
-        </div>
-      </div>
+        </main>
+      </section>
     </div>
   );
 }
