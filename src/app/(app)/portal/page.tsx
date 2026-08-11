@@ -4,6 +4,7 @@ import { STAGES, fmtDate } from "@/lib/constants";
 import { InvoiceStatusBadge } from "@/components/badges";
 import { uploadMatterFile } from "@/app/actions/files";
 import { sendMessage } from "@/app/actions/messages";
+import { canUseFeature, getSubscription } from "@/lib/entitlements";
 
 function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
@@ -13,6 +14,8 @@ function formatBytes(n: number) {
 
 export default async function ClientPortalPage() {
   const user = await requireNavAccess("portal");
+  const subscription = await getSubscription();
+  const financialsUnlocked = canUseFeature(subscription.tier, "financials");
 
   const clientProfile = await prisma.client.findUnique({ where: { portalUserId: user.id } });
 
@@ -24,12 +27,20 @@ export default async function ClientPortalPage() {
     where: { clients: { some: { clientId: clientProfile.id } } },
     include: {
       property: true,
-      invoices: true,
       documentChecks: { include: { files: true } },
       messages: { include: { sender: true }, orderBy: { createdAt: "asc" } },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // The portal is a distinct read path from /financials. Do not even load invoices for a firm
+  // without the financials entitlement, including records that predate a plan downgrade.
+  const invoices = financialsUnlocked
+    ? await prisma.invoice.findMany({
+        where: { matterId: { in: matters.map((matter) => matter.id) } },
+        select: { id: true, matterId: true, description: true, status: true },
+      })
+    : [];
 
   if (matters.length === 0) {
     return <div className="empty">You have no active matters yet.</div>;
@@ -40,6 +51,7 @@ export default async function ClientPortalPage() {
       {matters.map((m) => {
         const outstandingDocs = m.documentChecks.filter((d) => !d.done);
         const uploadedDocs = m.documentChecks.filter((d) => d.files.length > 0);
+        const matterInvoices = financialsUnlocked ? invoices.filter((invoice) => invoice.matterId === m.id) : [];
         const stageName = STAGES[m.stageIndex];
         const generalUploadWithIds = uploadMatterFile.bind(null, m.id, null);
         const sendMessageWithId = sendMessage.bind(null, m.id);
@@ -115,18 +127,22 @@ export default async function ClientPortalPage() {
                 </form>
               </div>
               <div className="card">
-                <h3>Invoices</h3>
-                {m.invoices.length ? (
-                  m.invoices.map((i) => (
-                    <div className="flex-between mb8" key={i.id}>
-                      <span className="small">{i.description}</span>
-                      <InvoiceStatusBadge status={i.status} />
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty small">No invoices yet.</div>
+                {financialsUnlocked && (
+                  <>
+                    <h3>Invoices</h3>
+                    {matterInvoices.length ? (
+                      matterInvoices.map((i) => (
+                        <div className="flex-between mb8" key={i.id}>
+                          <span className="small">{i.description}</span>
+                          <InvoiceStatusBadge status={i.status} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty small">No invoices yet.</div>
+                    )}
+                  </>
                 )}
-                <h3 className="mt20">Secure Chat</h3>
+                <h3 className={financialsUnlocked ? "mt20" : undefined}>Secure Chat</h3>
                 <div className="mb12" style={{ maxHeight: 220, overflowY: "auto" }}>
                   {m.messages.length === 0 && <div className="empty small">No messages yet.</div>}
                   {m.messages.map((msg) => (
