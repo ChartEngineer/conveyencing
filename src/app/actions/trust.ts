@@ -49,7 +49,7 @@ export async function recordTrustTransaction(
   });
 
   await logAudit(
-    session.userId,
+    session.id,
     `Recorded trust ${type === "DEPOSIT" ? "deposit" : "payment out"} of ${fmtMoney(Math.abs(amountCents))} for ${matter.reference}: ${description}`,
   );
 
