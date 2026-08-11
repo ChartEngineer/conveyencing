@@ -10,11 +10,10 @@ export default async function AiAssistantPage() {
   return (
     <>
       <div className="demo-banner">
-        This assistant is backed by Claude and can see a summary of the firm&apos;s current matters. Its answers are
-        general information only — always have a registered legal practitioner review anything before it is relied
-        upon. <b>Premium add-on</b> — {remaining} of {subscription.aiCreditsLimit} credits remaining this period.
-        OCR of scanned deeds/IDs, document comparison, and clause suggestions are planned premium features, not yet
-        enabled.
+        This assistant has two modes: conveyancing operations and Zimbabwe intellectual-property research. IP research
+        is citation-first and identifies points requiring current-law verification. Its answers are general information
+        only: a registered Zimbabwean legal practitioner must review anything before reliance. <b>Premium add-on</b>{" "}
+        {remaining} of {subscription.aiCreditsLimit} credits remaining this period.
       </div>
       <AiChatClient />
     </>
