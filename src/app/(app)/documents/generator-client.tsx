@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { DOC_TEMPLATES, generateDocument, IncompletePartiesError, type DocMatterData } from "@/lib/document-templates";
+import { DOC_TEMPLATES, generateDocument, IncompletePartiesError, isFinancialDocumentTemplate, type DocMatterData } from "@/lib/document-templates";
 import { recordDocGeneration } from "@/app/actions/documents";
 import EmptyState from "@/components/empty-state";
 
-export default function DocumentGeneratorClient({ matters }: { matters: (DocMatterData & { id: string })[] }) {
+export default function DocumentGeneratorClient({
+  matters,
+  financialsUnlocked,
+}: {
+  matters: (DocMatterData & { id: string })[];
+  financialsUnlocked: boolean;
+}) {
   const [matterId, setMatterId] = useState(matters[0]?.id ?? "");
   const [doc, setDoc] = useState<{ title: string; body: string } | null>(null);
   const [paywall, setPaywall] = useState<{ limit: number } | null>(null);
@@ -35,7 +41,7 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
     }
     setGenerating(true);
     try {
-      const result = await recordDocGeneration();
+      const result = await recordDocGeneration(templateId);
       if (!result.allowed) {
         setPaywall({ limit: result.limit });
         return;
@@ -97,7 +103,7 @@ export default function DocumentGeneratorClient({ matters }: { matters: (DocMatt
         )}
       </div>
       <div className="grid grid-4">
-        {DOC_TEMPLATES.map((t) => (
+        {DOC_TEMPLATES.filter((t) => financialsUnlocked || !isFinancialDocumentTemplate(t.id)).map((t) => (
           <div className="doc-card" key={t.id} onClick={() => open(t.id)}>
             <div className="ic">{t.icon}</div>
             <div className="small" style={{ fontWeight: 600 }}>
