@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { NAV, navForRole } from "@/lib/constants";
-import { getSubscription } from "@/lib/entitlements";
+import { canUseFeature, getSubscription, type GatedFeature } from "@/lib/entitlements";
 import { tierAtLeast } from "@/lib/plans";
 
 export const verifySession = cache(async () => {
@@ -43,6 +43,19 @@ export async function requireNavAccess(navId: string) {
     allowedByPlan = tierAtLeast(subscription.tier, item.minTier);
   }
   if (!allowedByRole || !allowedByPlan) {
+    const fallback = navForRole(user.role)[0];
+    redirect(fallback ? fallback.href : "/login");
+  }
+  return user;
+}
+
+// Feature checks protect server actions and secondary surfaces that are not represented by a
+// dedicated navigation item. Never rely on hiding a control in the client: a Server Action can
+// be invoked directly by an authenticated user.
+export async function requireFeatureAccess(feature: GatedFeature) {
+  const user = await getCurrentUser();
+  const subscription = await getSubscription();
+  if (!canUseFeature(subscription.tier, feature)) {
     const fallback = navForRole(user.role)[0];
     redirect(fallback ? fallback.href : "/login");
   }
