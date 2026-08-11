@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { verifySession } from "@/lib/dal";
+import { requireNavAccess } from "@/lib/dal";
 import { logAudit } from "@/lib/audit";
 import { fmtMoney } from "@/lib/constants";
 
@@ -12,7 +12,8 @@ export async function recordTrustTransaction(
   _prevState: RecordTrustTransactionState,
   formData: FormData,
 ): Promise<RecordTrustTransactionState> {
-  const session = await verifySession();
+  // Match the /financials page authorization for direct Server Action invocations.
+  const session = await requireNavAccess("financials");
 
   const matterId = String(formData.get("matterId") || "");
   const type = String(formData.get("type")) as "DEPOSIT" | "PAYMENT_OUT";
