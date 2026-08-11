@@ -2,14 +2,18 @@ import { prisma } from "@/lib/db";
 import DocumentGeneratorClient from "./generator-client";
 import { resolveSellerAndBuyer, type DocMatterData } from "@/lib/document-templates";
 import { requireNavAccess } from "@/lib/dal";
+import { canUseFeature, getSubscription } from "@/lib/entitlements";
 
 export default async function DocumentsPage() {
   await requireNavAccess("documents");
 
-  const matters = await prisma.matter.findMany({
-    include: { property: true, clients: { include: { client: true } }, responsible: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [matters, subscription] = await Promise.all([
+    prisma.matter.findMany({
+      include: { property: true, clients: { include: { client: true } }, responsible: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    getSubscription(),
+  ]);
 
   const data: (DocMatterData & { id: string })[] = matters.map((m) => {
     const { seller, buyer } = resolveSellerAndBuyer(m.clients.map((c) => c.client));
@@ -40,7 +44,7 @@ export default async function DocumentsPage() {
         Documents are generated from live matter data. Preview, copy, or download — always reviewed and signed off by a
         registered legal practitioner before use.
       </div>
-      <DocumentGeneratorClient matters={data} />
+      <DocumentGeneratorClient matters={data} financialsUnlocked={canUseFeature(subscription.tier, "financials")} />
     </>
   );
 }
