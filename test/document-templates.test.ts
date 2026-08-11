@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveSellerAndBuyer, generateDocument, type DocMatterData } from "../src/lib/document-templates.ts";
+import { isFinancialDocumentTemplate, resolveSellerAndBuyer, generateDocument, type DocMatterData } from "../src/lib/document-templates.ts";
 
 test("resolveSellerAndBuyer picks distinct seller/buyer when explicit roles exist", () => {
   const clients = [
@@ -55,4 +55,11 @@ test("generateDocument returns empty output for an unknown template id", () => {
   const { title, body } = generateDocument("not-a-real-template", sampleMatter());
   assert.equal(title, "");
   assert.equal(body, "");
+});
+
+test("only invoice and trust-receipt templates are classified as financial", () => {
+  assert.equal(isFinancialDocumentTemplate("invoice"), true);
+  assert.equal(isFinancialDocumentTemplate("receipt"), true);
+  assert.equal(isFinancialDocumentTemplate("aos"), false);
+  assert.equal(isFinancialDocumentTemplate("not-a-real-template"), false);
 });
